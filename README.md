@@ -21,7 +21,7 @@ theme() {
 Ensure the following is set in your `$PROFILE`
 
 ```powershell
-$env:POSH_THEME = "\path\to\poshthemes\your_theme.omp.json" # 
+$env:POSH_THEME = "\path\to\poshthemes\your_theme.omp.json"
 oh-my-posh --init --shell pwsh --config $env:POSH_THEME | Invoke-Expression
 
 # Optional but provides instant changing between themes. Alias can be whatever you like.
