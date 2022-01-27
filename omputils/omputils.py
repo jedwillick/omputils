@@ -174,7 +174,7 @@ def handle_update(args):
 
 def main():
     args = setup_argparse()
-    print(vars(args))
+    # print(vars(args))
     if args.command == "theme":
         handle_theme(args)
     elif args.command == "path":
