@@ -6,6 +6,8 @@ import sys
 import glob
 import subprocess
 import re
+import random
+
 
 DEFAULT_URL = "raw.githubusercontent.com/jedwillick/onedark-omp/main/onedark.omp.json"
 DEFAULT_NAME = "onedark"
@@ -14,6 +16,12 @@ OS = sys.platform
 if OS not in ["linux", "win32"]:
     print("Unsupported OS :(")
     sys.exit(1)
+
+if OS == "linux":
+    SHELL = ["bash", "-c"]
+else:
+    SHELL = ["pwsh", "-c"]
+
 
 
 def setup_argparse():
@@ -24,11 +32,12 @@ def setup_argparse():
     group_theme = p_theme.add_mutually_exclusive_group(required=True)
     group_theme.add_argument("-s", "--set", metavar="NAME", nargs='?', const=DEFAULT_NAME,
                              help="Sets to the specified theme, or to the default.")
-    group_theme.add_argument("-l", "--list", metavar='SEARCH', nargs='?',
+    group_theme.add_argument("-l", "--list", metavar='SEARCH', nargs='?', const="",
                              help="Lists all the themes or only those that match the search term.")
-    group_theme.add_argument("-g", "--get", metavar="URL", nargs='?',
+    group_theme.add_argument("-g", "--get", metavar="URL", nargs='?', const=DEFAULT_URL,
                              help="Downloads a theme or the default into your theme path and then sets to it.")
-    group_theme.add_argument("-d", "--default", metavar="URL", help="Change the default theme URL and NAME")
+    group_theme.add_argument("-d", "--default", metavar="URL", const=DEFAULT_URL, nargs='?',
+                             help="Change the default theme URL and NAME, without arg can be used to set to default theme.")
     group_theme.add_argument("-dn", "--default-name", metavar="NAME", help="Change the default theme NAME. e.g. space")
     group_theme.add_argument("-r", "--random", action='store_true')
 
@@ -43,13 +52,19 @@ def handle_theme(args):
     POSH_THEME = os.environ.get("POSH_THEME")
     THEME_PATH = os.path.dirname(POSH_THEME)
 
+    def extract_name(url: str):
+        return re.findall(r'([^/]+).omp.json', url)[0]
+
     def set_theme(theme: str):
+        if theme.endswith('.omp.json'):
+            theme = theme.replace('.omp.json', '')
+
         if glob.glob(f"{THEME_PATH}/{theme}.omp.json"):
             if OS == "linux":
-                subprocess.call(["bash", "-c",
+                subprocess.call([*SHELL,
                                 f'sed -i "s|export POSH_THEME=.*|export POSH_THEME={THEME_PATH}/{theme}.omp.json|" ~/.bashrc'])
             else:
-                subprocess.call(["pwsh", "-c",
+                subprocess.call([*SHELL,
                                 f"""(Get-Content $PROFILE).replace('$env:POSH_THEME = "{POSH_THEME}"', 
                                     '$env:POSH_THEME = "{THEME_PATH}\\{theme}.omp.json"') | Set-Content $PROFILE"""])
         else:
@@ -66,7 +81,7 @@ def handle_theme(args):
                 lines[i] = f"DEFAULT_URL = '{args.default}'\n"
             elif line.startswith("DEFAULT_NAME"):
                 if args.default:
-                    args.default_name = re.findall(r'([^/]+).omp.json', args.default)[0]
+                    args.default_name = extract_name(args.default)
                 lines[i] = f"DEFAULT_NAME = '{args.default_name}'\n"
                 break
 
@@ -77,12 +92,35 @@ def handle_theme(args):
 
     elif args.set:
         set_theme(args.set)
+
     elif args.get:
-        pass
+        file = os.path.basename(args.get)
+        if OS == "linux":
+            subprocess.call([*SHELL,
+                             f"wget {args.get} -O {THEME_PATH}/{file}"])
+        else:
+            subprocess.call([*SHELL,
+                             f"Invoke-WebRequest {args.get} -O {THEME_PATH}\\{file}"])
+        set_theme(extract_name(args.get))
+
+    elif args.random:
+        theme = random.choice([file for file in os.listdir(THEME_PATH) if file.endswith(".omp.json")])
+        set_theme(theme)
+
+        # theme = random.choice(glob.glob(f"{THEME_PATH}/*.omp.json"))
+        # set_theme(os.path.basename(theme))
+
+    elif args.list is not None:
+        for theme in glob.glob(f"{THEME_PATH}/*{args.list}*.omp.json"):
+            print("")
+            subprocess.call([*SHELL,
+                            f"oh-my-posh --config {theme} --shell universal"])
+            print(extract_name(theme))
+            print("")
 
 
 def main():
     args = setup_argparse()
-    print(vars(args))
+    # print(vars(args))
     if args.command == "theme":
         handle_theme(args)

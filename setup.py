@@ -6,7 +6,7 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(
     name='omputils',
-    version='0.0.1',
+    version='0.1.0',
     description='A utility script for Oh My Posh (https://ohmyposh.dev/)',
     long_description=long_description,
     long_description_content_type='text/markdown',
