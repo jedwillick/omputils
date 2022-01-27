@@ -32,42 +32,46 @@ POSH_THEME = os.getenv("POSH_THEME")
 if POSH_THEME is None:
     print("Please set the 'POSH_THEME' system variable to the path of your theme!")
     sys.exit(1)
+THEME_PATH = os.path.dirname(POSH_THEME)
 
 
-def setup_argparse():
-    p_root = argparse.ArgumentParser(
-        description="Utility commands for Oh My Posh. Custom themes must match '*.omp.json' to work.")
+def setup_argparse() -> argparse.Namespace:
+    p_root = argparse.ArgumentParser(description="Utility commands for Oh My Posh.")
     subparser = p_root.add_subparsers(metavar="MODE", required=True, dest='command')
-    p_theme = subparser.add_parser("theme", help="Commands to alter the overall theme.")
+
+    desc = f"Commands to alter the overall theme. Themes must match '{os.path.join(THEME_PATH, '*.omp.json')}'"
+    p_theme = subparser.add_parser("theme", help=desc, description=desc)
     group_theme = p_theme.add_mutually_exclusive_group(required=True)
     group_theme.add_argument("-s", "--set", metavar="NAME", nargs='?', const=DEFAULT_NAME,
-                             help="Sets to the specified theme, or to the default.")
+                             help="Sets to the specified theme. Defaults to '%(const)s'.")
     group_theme.add_argument("-l", "--list", metavar='SEARCH', nargs='?', const="",
                              help="Lists all the themes or only those that match the search term.")
     group_theme.add_argument("-g", "--get", metavar="URL", nargs='?', const=DEFAULT_URL,
-                             help="Downloads a theme or the default into your theme path and then sets to it.")
-    group_theme.add_argument("-d", "--default",  dest='default_name', metavar="URL", const=DEFAULT_URL, nargs='?',
+                             help="Downloads a theme into your theme path and then sets to it. Defaults to '%(const)s'.")
+    group_theme.add_argument("-d", "--default",  dest='default_name', metavar="URL", const=DEFAULT_NAME, nargs='?',
                              help="Change the default theme Name, without arg can be used to set to default theme.")
     group_theme.add_argument("-du", "--default-url", metavar="NAME", help="Change the default theme URL and Name. ")
     group_theme.add_argument("-r", "--random", action='store_true', help="Randomly selects a theme.")
 
-    p_path = subparser.add_parser("path", help="Commands to alter the pathstlye.")
+    desc = "Commands to alter the pathstlye."
+    p_path = subparser.add_parser("path", help=desc, description=desc)
     p_path.add_argument("style", nargs="?", choices=STYLES, metavar="STYLE",
                         help=f"Select one of the available styles: {STYLES}")
     p_path.add_argument("-l", "--link", action='store_true', help="Toggles the enable_hyperlink property")
-    p_update = subparser.add_parser("update", help="Updates Oh My Posh and Themes")
+
+    desc = "Updates Oh My Posh and Themes"
+    p_update = subparser.add_parser("update", help=desc, description=desc)
     p_update.add_argument("-m", '--mode', choices=INSTALL_MODES, metavar="MODE", default=INSTALL_MODES[0],
-                          help="Specifies the mode of installation. Defaults to 'manual' for linux and 'winget' for windows")
+                          help="Specifies the mode of installation. Defaults to '%(default)s'.")
+
     return p_root.parse_args()
 
 
-def handle_theme(args):
-    THEME_PATH = os.path.dirname(POSH_THEME)
-
-    def extract_name(url: str):
+def handle_theme(args: argparse.Namespace) -> None:
+    def extract_name(url: str) -> str:
         return re.findall(r'([^/]+).omp.json', url)[0]
 
-    def set_theme(theme: str):
+    def set_theme(theme: str) -> None:
         if theme.endswith('.omp.json'):
             theme = theme.replace('.omp.json', '')
 
@@ -94,6 +98,12 @@ def handle_theme(args):
             elif line.startswith("DEFAULT_NAME"):
                 if args.default_url:
                     args.default_name = extract_name(args.default_url)
+
+                if not glob.glob(f"{THEME_PATH}/{args.default_name}.omp.json"):
+                    print("Unable to update the Default theme.")
+                    print(f"Invalid theme '{args.default_name}'")
+                    sys.exit(1)
+
                 lines[i] = f"DEFAULT_NAME = '{args.default_name}'\n"
                 break
 
@@ -128,7 +138,7 @@ def handle_theme(args):
             print("")
 
 
-def handle_path(args):
+def handle_path(args: argparse.Namespace) -> None:
     with open(POSH_THEME, "r", encoding="utf-8") as reader:
         data = json.load(reader)
 
@@ -146,7 +156,7 @@ def handle_path(args):
         json.dump(data, writer, indent=4)
 
 
-def handle_update(args):
+def handle_update(args: argparse.Namespace) -> None:
     if OS == "linux":
         if args.mode == "manual":
             subprocess.call([
