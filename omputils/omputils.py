@@ -23,7 +23,6 @@ else:
     SHELL = ["pwsh", "-c"]
 
 
-
 def setup_argparse():
     p_root = argparse.ArgumentParser(
         description="Utility commands for Oh My Posh. Custom themes must match '*.omp.json' to work.")
@@ -96,11 +95,9 @@ def handle_theme(args):
     elif args.get:
         file = os.path.basename(args.get)
         if OS == "linux":
-            subprocess.call([*SHELL,
-                             f"wget {args.get} -O {THEME_PATH}/{file}"])
+            subprocess.call([*SHELL, f"wget {args.get} -O {THEME_PATH}/{file}"])
         else:
-            subprocess.call([*SHELL,
-                             f"Invoke-WebRequest {args.get} -O {THEME_PATH}\\{file}"])
+            subprocess.call([*SHELL, f"Invoke-WebRequest {args.get} -O {THEME_PATH}\\{file}"])
         set_theme(extract_name(args.get))
 
     elif args.random:
@@ -113,8 +110,7 @@ def handle_theme(args):
     elif args.list is not None:
         for theme in glob.glob(f"{THEME_PATH}/*{args.list}*.omp.json"):
             print("")
-            subprocess.call([*SHELL,
-                            f"oh-my-posh --config {theme} --shell universal"])
+            subprocess.call([*SHELL, f"oh-my-posh --config {theme} --shell universal"])
             print(extract_name(theme))
             print("")
 
