@@ -55,7 +55,7 @@ def setup_argparse() -> argparse.Namespace:
                              help="Downloads a theme into your theme path and then sets to it. Defaults to '%(const)s'.")
     group_theme.add_argument("-d", "--default",  dest='default_name', metavar="URL", const=DEFAULT_NAME, nargs='?',
                              help="Change the default theme Name, without arg can be used to set to default theme.")
-    group_theme.add_argument("-du", "--default-url", metavar="NAME", help="Change the default theme URL and Name. ")
+    group_theme.add_argument("-u", "--default-url", metavar="NAME", help="Change the default theme URL and Name. ")
     group_theme.add_argument("-r", "--random", action='store_true', help="Randomly selects a theme.")
 
     desc = "Commands to alter the pathstlye."
@@ -162,28 +162,29 @@ def handle_path(args: argparse.Namespace) -> None:
 
 def handle_update(args: argparse.Namespace) -> None:
     if PARENT in BASH:
-        if args.mode == "manual":
-            subprocess.call([
-                *SHELL,
-                "sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh"
-                + "&& sudo chmod +x /usr/local/bin/oh-my-posh"
-                + f"&& wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O {THEME_PATH}/themes.zip"
-                + f"&& unzip {THEME_PATH}/themes.zip -d ~/.poshthemes"
-                + f"&& chmod u+rw {THEME_PATH}/*.json"
-                + f"&& rm {THEME_PATH}/themes.zip"
-                + '&& echo "On v$(oh-my-posh --version)"'
+        if args.mode == "homebrew":
+            command = "brew update && brew upgrade oh-my-posh"
+        else:
+            command = ' && '.join([
+                "sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh",
+                "sudo chmod +x /usr/local/bin/oh-my-posh",
+                f"wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O {THEME_PATH}/themes.zip",
+                f"unzip {THEME_PATH}/themes.zip -d ~/.poshthemes",
+                f"chmod u+rw {THEME_PATH}/*.json",
+                f"rm {THEME_PATH}/themes.zip",
+                'echo "On v$(oh-my-posh --version)"'
             ])
-        elif args.mode == "homebrew":
-            subprocess.call([*SHELL, "brew update && brew upgrade oh-my-posh"])
     else:
-        if args.mode == "winget":
-            subprocess.call([*SHELL, "winget upgrade JanDeDobbeleer.OhMyPosh"])
-        elif args.mode == "scoop":
-            subprocess.call([*SHELL, "scoop update oh-my-posh"])
+        if args.mode == "scoop":
+            command = "scoop update oh-my-posh"
         elif args.mode == "powershell":
-            subprocess.call([*SHELL, "Update-Module oh-my-posh"])
+            command = "Update-Module oh-my-posh"
         elif args.mode == "chocolatey":
-            subprocess.call([*SHELL, "choco upgrade oh-my-posh"])
+            command = "choco upgrade oh-my-posh"
+        else:
+            command = "winget upgrade JanDeDobbeleer.OhMyPosh"
+
+    subprocess.call([*SHELL, command])
 
 
 def main() -> int:
