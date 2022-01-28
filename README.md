@@ -32,3 +32,7 @@ function Edit-PoshTheme {
 
 Set-Alias theme Edit-PoshTheme
 ```
+
+## More
+
+Currently only supports bash and powershell.

@@ -8,6 +8,7 @@ import glob
 import subprocess
 import re
 import random
+import psutil
 
 
 DEFAULT_URL = "raw.githubusercontent.com/jedwillick/onedark-omp/main/onedark.omp.json"
@@ -16,17 +17,21 @@ DEFAULT_NAME = "onedark"
 STYLES = ["full", "folder", "mixed", "letter", "agnoster",
           "agnoster_full", "agnoster_short", "agnoster_left"]
 
-OS = sys.platform
-if OS not in ["linux", "win32"]:
-    print("Unsupported OS :(")
+BASH = ["bash", "/bin/bash"]
+PS = ["pwsh", "pwsh.exe", "powershell", "powershell.exe"]
+
+pproc = psutil.Process(os.getppid())
+PARENT = pproc.name() if "omputils" not in pproc.name() else pproc.parent().name()
+
+if PARENT in BASH:
+    INSTALL_MODES = ["manual", "homebrew"]
+elif PARENT in PS:
+    INSTALL_MODES = ["winget", "scoop", "powershell", "chocolatey"]
+else:
+    print(f"{PARENT} currently not supported. Sorry :(")
     sys.exit(1)
 
-if OS == "linux":
-    SHELL = ["bash", "-c"]
-    INSTALL_MODES = ["manual", "homebrew"]
-else:
-    SHELL = ["pwsh", "-c"]
-    INSTALL_MODES = ["winget", "scoop", "powershell", "chocolatey"]
+SHELL = [PARENT, "-c"]
 
 POSH_THEME = os.getenv("POSH_THEME")
 if POSH_THEME is None:
@@ -76,7 +81,7 @@ def handle_theme(args: argparse.Namespace) -> None:
             theme = theme.replace('.omp.json', '')
 
         if glob.glob(f"{THEME_PATH}/{theme}.omp.json"):
-            if OS == "linux":
+            if PARENT in BASH:
                 subprocess.call([*SHELL,
                                 f'sed -i "s|export POSH_THEME=.*|export POSH_THEME={THEME_PATH}/{theme}.omp.json|" ~/.bashrc'])
             else:
@@ -117,7 +122,7 @@ def handle_theme(args: argparse.Namespace) -> None:
 
     elif args.get:
         file = os.path.basename(args.get)
-        if OS == "linux":
+        if PARENT in BASH:
             subprocess.call([*SHELL, f"wget {args.get} -O {THEME_PATH}/{file}"])
         else:
             subprocess.call([*SHELL, f"Invoke-WebRequest {args.get} -O {THEME_PATH}\\{file}"])
@@ -157,17 +162,17 @@ def handle_path(args: argparse.Namespace) -> None:
 
 
 def handle_update(args: argparse.Namespace) -> None:
-    if OS == "linux":
+    if PARENT in BASH:
         if args.mode == "manual":
             subprocess.call([
                 *SHELL,
                 "sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh"
                 + "&& sudo chmod +x /usr/local/bin/oh-my-posh"
-                + "&& mkdir -p ~/.poshthemes"
-                + "&& wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O ~/.poshthemes/themes.zip"
-                + "&& unzip ~/.poshthemes/themes.zip -d ~/.poshthemes"
-                + "&& chmod u+rw ~/.poshthemes/*.json"
-                + "&& rm ~/.poshthemes/themes.zip"
+                + f"&& wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O {THEME_PATH}/themes.zip"
+                + f"&& unzip {THEME_PATH}/themes.zip -d ~/.poshthemes"
+                + f"&& chmod u+rw {THEME_PATH}/*.json"
+                + f"&& rm {THEME_PATH}/themes.zip"
+                +'&& echo "On v$(oh-my-posh --version)"'
             ])
         elif args.mode == "homebrew":
             subprocess.call([*SHELL, "brew update && brew upgrade oh-my-posh"])

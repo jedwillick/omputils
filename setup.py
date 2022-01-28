@@ -6,7 +6,7 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(
     name='omputils',
-    version='0.2.1',
+    version='0.2.2',
     description='A utility script for Oh My Posh (https://ohmyposh.dev/)',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -48,7 +48,7 @@ setup(
     # https://packaging.python.org/guides/distributing-packages-using-setuptools/#python-requires
     python_requires='>=3.8',
 
-    install_requires=[],
+    install_requires=['psutil'],
 
     entry_points={
         'console_scripts': [
