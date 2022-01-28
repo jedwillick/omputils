@@ -1,6 +1,7 @@
 # OMP UTILS
 
-A utility script for [Oh My Posh](https://ohmyposh.dev/)
+A utility script for [Oh My Posh](https://ohmyposh.dev/)  
+Currently only supports bash and powershell.
 
 ## Bash
 
@@ -35,4 +36,4 @@ Set-Alias theme Edit-PoshTheme
 
 ## More
 
-Currently only supports bash and powershell.
+[Check out my One Dark inspired theme.](https://github.com/jedwillick/onedark-omp)

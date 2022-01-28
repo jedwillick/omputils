@@ -172,7 +172,7 @@ def handle_update(args: argparse.Namespace) -> None:
                 + f"&& unzip {THEME_PATH}/themes.zip -d ~/.poshthemes"
                 + f"&& chmod u+rw {THEME_PATH}/*.json"
                 + f"&& rm {THEME_PATH}/themes.zip"
-                +'&& echo "On v$(oh-my-posh --version)"'
+                + '&& echo "On v$(oh-my-posh --version)"'
             ])
         elif args.mode == "homebrew":
             subprocess.call([*SHELL, "brew update && brew upgrade oh-my-posh"])
@@ -187,7 +187,7 @@ def handle_update(args: argparse.Namespace) -> None:
             subprocess.call([*SHELL, "choco upgrade oh-my-posh"])
 
 
-def main():
+def main() -> int:
     args = setup_argparse()
     # print(vars(args))
     if args.command == "theme":
@@ -196,3 +196,5 @@ def main():
         handle_path(args)
     elif args.command == "update":
         handle_update(args)
+
+    return 0
