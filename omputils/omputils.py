@@ -137,10 +137,9 @@ def handle_theme(args: argparse.Namespace) -> None:
 
     elif args.list is not None:
         for theme in glob.glob(f"{THEME_PATH}/*{args.list}*.omp.json"):
-            print("")
+            print()
             subprocess.call([*SHELL, f"oh-my-posh --config {theme} --shell universal"])
-            print(extract_name(theme))
-            print("")
+            print(extract_name(theme), "\n")
 
 
 def handle_path(args: argparse.Namespace) -> None:
