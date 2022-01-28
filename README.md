@@ -3,7 +3,15 @@
 A utility script for [Oh My Posh](https://ohmyposh.dev/)  
 Currently only supports bash and powershell.
 
-## Bash
+## Setup
+
+```shell
+git clone https://github.com/jedwillick/omputils.git
+cd omputils
+pip install .
+```
+
+### Bash
 
 Ensure the following is set in your `.bashrc` or `.profile` or equivalent.
 
@@ -17,7 +25,7 @@ theme() {
 }
 ```
 
-## Powershell
+### Powershell
 
 Ensure the following is set in your `$PROFILE`
 
