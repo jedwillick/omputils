@@ -1,15 +1,14 @@
-#!/usr/bin/env python3
-
 import argparse
+import glob
 import json
 import os
-import sys
-import glob
-import subprocess
-import re
-import random
-import psutil
 import pathlib
+import random
+import re
+import subprocess
+import sys
+
+import psutil
 
 DEFAULT_URL = "raw.githubusercontent.com/jedwillick/onedark-omp/main/onedark.omp.json"
 DEFAULT_NAME = "onedark"
@@ -53,7 +52,7 @@ def setup_argparse() -> argparse.Namespace:
                              help="Lists all the themes or only those that match the search term.")
     group_theme.add_argument("-g", "--get", metavar="URL", nargs='?', const=DEFAULT_URL,
                              help="Downloads a theme into your theme path and then sets to it. Defaults to '%(const)s'.")
-    group_theme.add_argument("-d", "--default",  dest='default_name', metavar="URL", const=DEFAULT_NAME, nargs='?',
+    group_theme.add_argument("-d", "--default", dest='default_name', metavar="URL", const=DEFAULT_NAME, nargs='?',
                              help="Change the default theme Name, without arg can be used to set to default theme.")
     group_theme.add_argument("-u", "--default-url", metavar="NAME", help="Change the default theme URL and Name. ")
     group_theme.add_argument("-r", "--random", action='store_true', help="Randomly selects a theme.")
@@ -85,10 +84,10 @@ def handle_theme(args: argparse.Namespace) -> None:
         if glob.glob(f"{THEME_PATH}/{theme}.omp.json"):
             if PARENT in BASH:
                 subprocess.call([*SHELL,
-                                f'sed -i "s|export POSH_THEME=.*|export POSH_THEME={THEME_PATH}/{theme}.omp.json|" ~/.bashrc'])
+                                 f'sed -i "s|export POSH_THEME=.*|export POSH_THEME={THEME_PATH}/{theme}.omp.json|" ~/.bashrc'])
             else:
                 subprocess.call([*SHELL,
-                                f"""(Get-Content $PROFILE).replace('$env:POSH_THEME = "{POSH_THEME}"',
+                                 f"""(Get-Content $PROFILE).replace('$env:POSH_THEME = "{POSH_THEME}"',
                                     '$env:POSH_THEME = "{THEME_PATH}\\{theme}.omp.json"') | Set-Content $PROFILE"""])
         else:
             print(f"Invalid theme '{theme}'")
@@ -149,7 +148,7 @@ def handle_theme(args: argparse.Namespace) -> None:
 
         with open(POSH_THEME, "r", encoding="utf-8") as reader:
             data = json.load(reader)
-            
+
         details = {}
         for block in data["blocks"]:
             segments = [segment["type"] for segment in block["segments"]]
