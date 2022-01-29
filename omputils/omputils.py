@@ -9,7 +9,7 @@ import subprocess
 import re
 import random
 import psutil
-
+import pathlib
 
 DEFAULT_URL = "raw.githubusercontent.com/jedwillick/onedark-omp/main/onedark.omp.json"
 DEFAULT_NAME = "onedark"
@@ -57,6 +57,8 @@ def setup_argparse() -> argparse.Namespace:
                              help="Change the default theme Name, without arg can be used to set to default theme.")
     group_theme.add_argument("-u", "--default-url", metavar="NAME", help="Change the default theme URL and Name. ")
     group_theme.add_argument("-r", "--random", action='store_true', help="Randomly selects a theme.")
+    group_theme.add_argument("-c", '--current', action='store_true',
+                             help="Displays information about the current theme.")
 
     desc = "Commands to alter the pathstlye."
     p_path = subparser.add_parser("path", help=desc, description=desc)
@@ -141,6 +143,21 @@ def handle_theme(args: argparse.Namespace) -> None:
             subprocess.call([*SHELL, f"oh-my-posh --config {theme} --shell universal"])
             print(extract_name(theme), "\n")
 
+    elif args.current:
+        print("Theme:", extract_name(POSH_THEME))
+        print("Open:", pathlib.Path(POSH_THEME).as_uri())
+
+        with open(POSH_THEME, "r", encoding="utf-8") as reader:
+            data = json.load(reader)
+            
+        details = {}
+        for block in data["blocks"]:
+            segments = [segment["type"] for segment in block["segments"]]
+            details.setdefault(f'{block["alignment"]} - {block["type"]}', []).extend(segments)
+
+        for k, v in details.items():
+            print(f"\n{k} \n{', '.join(v)}")
+
 
 def handle_path(args: argparse.Namespace) -> None:
     with open(POSH_THEME, "r", encoding="utf-8") as reader:
@@ -166,13 +183,15 @@ def handle_update(args: argparse.Namespace) -> None:
             command = "brew update && brew upgrade oh-my-posh"
         else:
             command = ' && '.join([
-                "sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh",
-                "sudo chmod +x /usr/local/bin/oh-my-posh",
-                f"wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O {THEME_PATH}/themes.zip",
-                f"unzip {THEME_PATH}/themes.zip -d ~/.poshthemes",
-                f"chmod u+rw {THEME_PATH}/*.json",
-                f"rm {THEME_PATH}/themes.zip",
-                'echo "On v$(oh-my-posh --version)"'
+                'OMP_OV="v$(oh-my-posh --version)"',
+                'sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh',
+                'sudo chmod +x /usr/local/bin/oh-my-posh',
+                f'wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O {THEME_PATH}/themes.zip',
+                f'unzip {THEME_PATH}/themes.zip -d {THEME_PATH}',
+                f'chmod u+rw {THEME_PATH}/*.json',
+                f'rm {THEME_PATH}/themes.zip',
+                'OMP_NV="v$(oh-my-posh --version)"',
+                'if [ "$OMP_OV" == "$OMP_NV" ]; then echo "Stayed on $OMP_OV"; else echo "Updated to $OMP_NV"; echo "https://github.com/JanDeDobbeleer/oh-my-posh/releases/tag/$OMP_NV"; fi'
             ])
     else:
         if args.mode == "scoop":
