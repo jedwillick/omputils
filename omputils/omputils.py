@@ -75,7 +75,7 @@ def setup_argparse() -> argparse.Namespace:
 
 def handle_theme(args: argparse.Namespace) -> None:
     def extract_name(url: str) -> str:
-        return re.findall(r'([^/]+).omp.json', url)[0]
+        return re.findall(r'([^\/\\]+)\.omp\.json', url)[0]
 
     def set_theme(theme: str) -> None:
         if theme.endswith('.omp.json'):
