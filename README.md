@@ -6,9 +6,8 @@ Currently only supports bash and powershell.
 ## Setup
 
 ```shell
-git clone https://github.com/jedwillick/omputils.git
-cd omputils
-pip install .
+pip install git+https://github.com/jedwillick/omputils
+omputils --help
 ```
 
 ### Bash
@@ -19,7 +18,7 @@ Ensure the following is set in your `.bashrc` or `.profile` or equivalent.
 export POSH_THEME=/path/to/poshthemes/your_theme.omp.json
 eval "$(oh-my-posh --init --shell bash --config $POSH_THEME)"
 
-# Optional but provides instant changing between themes. Function name can be whatever you like.
+# Optional but provides instant changing between themes.
 theme() {
     omputils theme "$@" && source ~/.bashrc
 }
@@ -33,7 +32,7 @@ Ensure the following is set in your `$PROFILE`
 $env:POSH_THEME = "\path\to\poshthemes\your_theme.omp.json"
 oh-my-posh --init --shell pwsh --config $env:POSH_THEME | Invoke-Expression
 
-# Optional but provides instant changing between themes. Alias can be whatever you like.
+# Optional but provides instant changing between themes.
 function Edit-PoshTheme {
     omputils theme $args 
     . $PROFILE

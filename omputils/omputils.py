@@ -49,8 +49,8 @@ THEME_PATH = os.path.dirname(POSH_THEME)
 
 
 def setup_argparse() -> argparse.Namespace:
-    p_root = argparse.ArgumentParser(description="Utility commands for Oh My Posh.")
-    subparser = p_root.add_subparsers(metavar="MODE", required=True, dest='command')
+    p_root = argparse.ArgumentParser(description="Utility commands for Oh My Posh.\nUse 'omputils <CMD> --help' for more info", formatter_class=argparse.RawTextHelpFormatter)
+    subparser = p_root.add_subparsers(metavar="CMD", required=True, dest='command')
 
     desc = f"Commands to alter the overall theme. Themes must match '{os.path.join(THEME_PATH, '*.omp.json')}'"
     p_theme = subparser.add_parser("theme", help=desc, description=desc)
