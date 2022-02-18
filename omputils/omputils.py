@@ -11,10 +11,19 @@ import sys
 import psutil
 
 DEFAULT_URL = "raw.githubusercontent.com/jedwillick/onedark-omp/main/onedark.omp.json"
-DEFAULT_NAME = "onedark"
+DEFAULT_NAME = 'onedark'
 
-STYLES = ["full", "folder", "mixed", "letter", "agnoster",
-          "agnoster_full", "agnoster_short", "agnoster_left"]
+STYLES = [
+    "full",
+    "folder",
+    "mixed",
+    "letter",
+    "agnoster",
+    "agnoster_full",
+    "agnoster_short",
+    "agnoster_left",
+    "unique"
+]
 
 BASH = ["bash", "/bin/bash"]
 PS = ["pwsh", "pwsh.exe", "powershell", "powershell.exe"]
@@ -63,7 +72,8 @@ def setup_argparse() -> argparse.Namespace:
     p_path = subparser.add_parser("path", help=desc, description=desc)
     p_path.add_argument("style", nargs="?", choices=STYLES, metavar="STYLE",
                         help=f"Select one of the available styles: {STYLES}")
-    p_path.add_argument("-l", "--link", action='store_true', help="Toggles the enable_hyperlink property")
+    p_path.add_argument("-l", "--link", action='store_true', help="Enables hyperlink on path")
+    p_path.add_argument("-nl", "--no-link", action='store_true', help="Disables hyperlink on path")
 
     desc = "Updates Oh My Posh and Themes"
     p_update = subparser.add_parser("update", help=desc, description=desc)
@@ -168,12 +178,14 @@ def handle_path(args: argparse.Namespace) -> None:
                 target = segment["properties"]
 
     if args.link:
-        target["enable_hyperlink"] = not target["enable_hyperlink"]
+        target["template"] = " {{ path .Path .Location }} "
+    if args.no_link:
+        target["template"] = " {{ .Path }} "
     if args.style:
         target["style"] = args.style
 
     with open(POSH_THEME, "w", encoding="utf-8") as writer:
-        json.dump(data, writer, indent=4)
+        json.dump(data, writer, indent=2)
 
 
 def handle_update(args: argparse.Namespace) -> None:
@@ -185,6 +197,7 @@ def handle_update(args: argparse.Namespace) -> None:
                 'OMP_OV="v$(oh-my-posh --version)"',
                 'sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh',
                 'sudo chmod +x /usr/local/bin/oh-my-posh',
+                f'mkdir -p {THEME_PATH}',
                 f'wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O {THEME_PATH}/themes.zip',
                 f'unzip {THEME_PATH}/themes.zip -d {THEME_PATH}',
                 f'chmod u+rw {THEME_PATH}/*.json',
