@@ -49,7 +49,8 @@ THEME_PATH = os.path.dirname(POSH_THEME)
 
 
 def setup_argparse() -> argparse.Namespace:
-    p_root = argparse.ArgumentParser(description="Utility commands for Oh My Posh.\nUse 'omputils <CMD> --help' for more info", formatter_class=argparse.RawTextHelpFormatter)
+    p_root = argparse.ArgumentParser(description="Utility commands for Oh My Posh.\nUse 'omputils <CMD> --help' for more info",
+                                     formatter_class=argparse.RawTextHelpFormatter)
     subparser = p_root.add_subparsers(metavar="CMD", required=True, dest='command')
 
     desc = f"Commands to alter the overall theme. Themes must match '{os.path.join(THEME_PATH, '*.omp.json')}'"
@@ -70,10 +71,12 @@ def setup_argparse() -> argparse.Namespace:
 
     desc = "Commands to alter the pathstlye."
     p_path = subparser.add_parser("path", help=desc, description=desc)
-    p_path.add_argument("style", nargs="?", choices=STYLES, metavar="STYLE",
+    p_path.add_argument("-s", "--style", choices=STYLES, metavar="STYLE",
                         help=f"Select one of the available styles: {STYLES}")
     p_path.add_argument("-l", "--link", action='store_true', help="Enables hyperlink on path")
     p_path.add_argument("-nl", "--no-link", action='store_true', help="Disables hyperlink on path")
+    p_path.add_argument('-d', '--depth', type=int,
+                        help="Sets the maximum depth of the path when using agnoster_short.")
 
     desc = "Updates Oh My Posh and Themes"
     p_update = subparser.add_parser("update", help=desc, description=desc)
@@ -183,6 +186,8 @@ def handle_path(args: argparse.Namespace) -> None:
         target["template"] = " {{ .Path }} "
     if args.style:
         target["style"] = args.style
+    if args.depth:
+        target["max_depth"] = args.depth
 
     with open(POSH_THEME, "w", encoding="utf-8") as writer:
         json.dump(data, writer, indent=2)
