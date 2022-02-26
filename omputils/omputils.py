@@ -2,11 +2,11 @@ import argparse
 import glob
 import json
 import os
-import pathlib
 import random
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 import psutil
 
@@ -100,8 +100,8 @@ def handle_theme(args: argparse.Namespace) -> None:
                                  f'sed -i "s|export POSH_THEME=.*|export POSH_THEME={THEME_PATH}/{theme}.omp.json|" ~/.bashrc'])
             else:
                 subprocess.call([*SHELL,
-                                 f"""(Get-Content $PROFILE).replace('$env:POSH_THEME = "{POSH_THEME}"',
-                                    '$env:POSH_THEME = "{THEME_PATH}\\{theme}.omp.json"') | Set-Content $PROFILE"""])
+                                 f"""(Get-Content $PROFILE).replace('$env:POSH_THEME = "{POSH_THEME.replace(str(Path.home()), '$env:USERPROFILE')}"',
+                                    '$env:POSH_THEME = "{THEME_PATH.replace(str(Path.home()), '$env:USERPROFILE')}\\{theme}.omp.json"') | Set-Content $PROFILE"""])
         else:
             print(f"Invalid theme '{theme}'")
             print("Try 'omputils theme --help for more information")
@@ -153,11 +153,11 @@ def handle_theme(args: argparse.Namespace) -> None:
         for theme in glob.glob(f"{THEME_PATH}/*{args.list}*.omp.json"):
             print()
             subprocess.call([*SHELL, f"oh-my-posh --config {theme} --shell universal"])
-            print(extract_name(theme), "\n")
+            print(f"\u001b]8;;{theme}\u001b\\{extract_name(theme)}\u001b]8;;\u001b\\\n")
 
     elif args.current:
         print("Theme:", extract_name(POSH_THEME))
-        print("Open:", pathlib.Path(POSH_THEME).as_uri())
+        print("Open:", Path(POSH_THEME).as_uri())
 
         with open(POSH_THEME, "r", encoding="utf-8") as reader:
             data = json.load(reader)
