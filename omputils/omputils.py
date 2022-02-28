@@ -10,8 +10,7 @@ from pathlib import Path
 
 import psutil
 
-DEFAULT_URL = "raw.githubusercontent.com/jedwillick/onedark-omp/main/onedark.omp.json"
-DEFAULT_NAME = 'onedark'
+DEFAULT_THEME = 'min'
 
 STYLES = [
     "full",
@@ -56,15 +55,14 @@ def setup_argparse() -> argparse.Namespace:
     desc = f"Commands to alter the overall theme. Themes must match '{os.path.join(THEME_PATH, '*.omp.json')}'"
     p_theme = subparser.add_parser("theme", help=desc, description=desc)
     group_theme = p_theme.add_mutually_exclusive_group(required=True)
-    group_theme.add_argument("-s", "--set", metavar="NAME", nargs='?', const=DEFAULT_NAME,
+    group_theme.add_argument("-s", "--set", metavar="NAME", nargs='?', const=DEFAULT_THEME,
                              help="Sets to the specified theme. Defaults to '%(const)s'.")
     group_theme.add_argument("-l", "--list", metavar='SEARCH', nargs='?', const="",
                              help="Lists all the themes or only those that match the search term.")
-    group_theme.add_argument("-g", "--get", metavar="URL", nargs='?', const=DEFAULT_URL,
-                             help="Downloads a theme into your theme path and then sets to it. Defaults to '%(const)s'.")
-    group_theme.add_argument("-d", "--default", dest='default_name', metavar="URL", const=DEFAULT_NAME, nargs='?',
-                             help="Change the default theme Name, without arg can be used to set to default theme.")
-    group_theme.add_argument("-u", "--default-url", metavar="NAME", help="Change the default theme URL and Name. ")
+    group_theme.add_argument("-g", "--get", metavar="URL",
+                             help="Downloads a theme into your theme path and then sets to it. ")
+    group_theme.add_argument("-d", "--default", action='store_true',
+                             help="Change the default theme to the current theme.")
     group_theme.add_argument("-r", "--random", action='store_true', help="Randomly selects a theme.")
     group_theme.add_argument("-c", '--current', action='store_true',
                              help="Displays information about the current theme.")
@@ -107,29 +105,17 @@ def handle_theme(args: argparse.Namespace) -> None:
             print("Try 'omputils theme --help for more information")
             sys.exit(1)
 
-    if args.default_url or args.default_name:
+    if args.default:
         with open(__file__, 'r') as reader:
             lines = reader.readlines()
 
         for i, line in enumerate(lines):
-            if args.default_url and line.startswith("DEFAULT_URL"):
-                lines[i] = f"DEFAULT_URL = '{args.default_url}'\n"
-            elif line.startswith("DEFAULT_NAME"):
-                if args.default_url:
-                    args.default_name = extract_name(args.default_url)
-
-                if not glob.glob(f"{THEME_PATH}/{args.default_name}.omp.json"):
-                    print("Unable to update the Default theme.")
-                    print(f"Invalid theme '{args.default_name}'")
-                    sys.exit(1)
-
-                lines[i] = f"DEFAULT_NAME = '{args.default_name}'\n"
+            if line.startswith("DEFAULT_THEME"):
+                lines[i] = f"DEFAULT_THEME = '{extract_name(POSH_THEME)}'\n"
                 break
 
         with open(__file__, "w") as writer:
             writer.writelines(lines)
-
-        set_theme(args.default_name)
 
     elif args.set:
         set_theme(args.set)
@@ -200,15 +186,16 @@ def handle_update(args: argparse.Namespace) -> None:
         else:
             command = ' && '.join([
                 'OMP_OV="v$(oh-my-posh --version)"',
-                'sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh',
+                'sudo wget -q --show-progress https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh',
                 'sudo chmod +x /usr/local/bin/oh-my-posh',
                 f'mkdir -p {THEME_PATH}',
-                f'wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O {THEME_PATH}/themes.zip',
-                f'unzip {THEME_PATH}/themes.zip -d {THEME_PATH}',
+                f'wget -q --show-progress https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O {THEME_PATH}/themes.zip',
+                f'unzip -oqq {THEME_PATH}/themes.zip -d {THEME_PATH}',
                 f'chmod u+rw {THEME_PATH}/*.json',
                 f'rm {THEME_PATH}/themes.zip',
                 'OMP_NV="v$(oh-my-posh --version)"',
-                'if [ "$OMP_OV" == "$OMP_NV" ]; then echo "Stayed on $OMP_OV"; else echo "Updated to $OMP_NV"; echo "https://github.com/JanDeDobbeleer/oh-my-posh/releases/tag/$OMP_NV"; fi'
+                'if [ "$OMP_OV" == "$OMP_NV" ]; then printf "Stayed on "; else printf "Updated to "; fi',
+                r'echo -e "\e]8;;https://github.com/JanDeDobbeleer/oh-my-posh/releases/tag/${OMP_NV}\a${OMP_NV}\e]8;;\a"'
             ])
     else:
         if args.mode == "scoop":
@@ -220,7 +207,9 @@ def handle_update(args: argparse.Namespace) -> None:
         else:
             command = "winget upgrade JanDeDobbeleer.OhMyPosh"
 
-    subprocess.call([*SHELL, command])
+    if retcode := subprocess.call([*SHELL, command]):
+        print("Failed to update Oh My Posh!")
+        sys.exit(retcode)
 
 
 def main() -> int:
