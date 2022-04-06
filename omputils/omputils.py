@@ -10,7 +10,7 @@ from pathlib import Path
 
 import psutil
 
-DEFAULT_THEME = 'min'
+DEFAULT_THEME = "min"
 
 STYLES = [
     "full",
@@ -21,7 +21,7 @@ STYLES = [
     "agnoster_full",
     "agnoster_short",
     "agnoster_left",
-    "unique"
+    "unique",
 ]
 
 BASH = ["bash", "/bin/bash"]
@@ -48,65 +48,123 @@ THEME_PATH = os.path.dirname(POSH_THEME)
 
 
 def setup_argparse() -> argparse.Namespace:
-    p_root = argparse.ArgumentParser(description="Utility commands for Oh My Posh.\nUse 'omputils <CMD> --help' for more info",
-                                     formatter_class=argparse.RawTextHelpFormatter)
-    subparser = p_root.add_subparsers(metavar="CMD", required=True, dest='command')
+    p_root = argparse.ArgumentParser(
+        description="Utility commands for Oh My Posh.\nUse 'omputils <CMD> --help' for more info",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    subparser = p_root.add_subparsers(metavar="CMD", required=True, dest="command")
 
     desc = f"Commands to alter the overall theme. Themes must match '{os.path.join(THEME_PATH, '*.omp.json')}'"
     p_theme = subparser.add_parser("theme", help=desc, description=desc)
     group_theme = p_theme.add_mutually_exclusive_group(required=True)
-    group_theme.add_argument("-s", "--set", metavar="NAME", nargs='?', const=DEFAULT_THEME,
-                             help="Sets to the specified theme. Defaults to '%(const)s'.")
-    group_theme.add_argument("-l", "--list", metavar='SEARCH', nargs='?', const="",
-                             help="Lists all the themes or only those that match the search term.")
-    group_theme.add_argument("-g", "--get", metavar="URL",
-                             help="Downloads a theme into your theme path and then sets to it. ")
-    group_theme.add_argument("-d", "--default", action='store_true',
-                             help="Change the default theme to the current theme.")
-    group_theme.add_argument("-r", "--random", action='store_true', help="Randomly selects a theme.")
-    group_theme.add_argument("-c", '--current', action='store_true',
-                             help="Displays information about the current theme.")
+    group_theme.add_argument(
+        "-s",
+        "--set",
+        metavar="NAME",
+        nargs="?",
+        const=DEFAULT_THEME,
+        help="Sets to the specified theme. Defaults to '%(const)s'.",
+    )
+    group_theme.add_argument(
+        "-l",
+        "--list",
+        metavar="SEARCH",
+        nargs="?",
+        const="",
+        help="Lists all the themes or only those that match the search term.",
+    )
+    group_theme.add_argument(
+        "-g",
+        "--get",
+        metavar="URL",
+        help="Downloads a theme into your theme path and then sets to it. ",
+    )
+    group_theme.add_argument(
+        "-d",
+        "--default",
+        action="store_true",
+        help="Change the default theme to the current theme.",
+    )
+    group_theme.add_argument(
+        "-r", "--random", action="store_true", help="Randomly selects a theme."
+    )
+    group_theme.add_argument(
+        "-c",
+        "--current",
+        action="store_true",
+        help="Displays information about the current theme.",
+    )
 
     desc = "Commands to alter the pathstlye."
     p_path = subparser.add_parser("path", help=desc, description=desc)
-    p_path.add_argument("-s", "--style", choices=STYLES, metavar="STYLE",
-                        help=f"Select one of the available styles: {STYLES}")
-    p_path.add_argument("-l", "--link", action='store_true', help="Enables hyperlink on path")
-    p_path.add_argument("-nl", "--no-link", action='store_true', help="Disables hyperlink on path")
-    p_path.add_argument('-d', '--depth', type=int,
-                        help="Sets the maximum depth of the path when using agnoster_short.")
+    p_path.add_argument(
+        "-s",
+        "--style",
+        choices=STYLES,
+        metavar="STYLE",
+        help=f"Select one of the available styles: {STYLES}",
+    )
+    p_path.add_argument(
+        "-l", "--link", action="store_true", help="Enables hyperlink on path"
+    )
+    p_path.add_argument(
+        "-nl", "--no-link", action="store_true", help="Disables hyperlink on path"
+    )
+    p_path.add_argument(
+        "-d",
+        "--depth",
+        type=int,
+        help="Sets the maximum depth of the path when using agnoster_short.",
+    )
 
     desc = "Updates Oh My Posh and Themes"
     p_update = subparser.add_parser("update", help=desc, description=desc)
-    p_update.add_argument("-m", '--mode', choices=INSTALL_MODES, metavar="MODE", default=INSTALL_MODES[0],
-                          help="Specifies the mode of installation. Defaults to '%(default)s'.")
+    p_update.add_argument(
+        "-m",
+        "--mode",
+        choices=INSTALL_MODES,
+        metavar="MODE",
+        default=INSTALL_MODES[0],
+        help="Specifies the mode of installation. Defaults to '%(default)s'.",
+    )
 
     return p_root.parse_args()
 
 
 def handle_theme(args: argparse.Namespace) -> None:
+    def replace_home(path: str) -> str:
+        return path.replace(str(Path.home()), "~")
+
     def extract_name(url: str) -> str:
-        return re.findall(r'([^\/\\]+)\.omp\.json', url)[0]
+        return re.findall(r"([^\/\\]+)\.omp\.json", url)[0]
 
     def set_theme(theme: str) -> None:
-        if theme.endswith('.omp.json'):
-            theme = theme.replace('.omp.json', '')
+        if theme.endswith(".omp.json"):
+            theme = theme.replace(".omp.json", "")
 
         if glob.glob(f"{THEME_PATH}/{theme}.omp.json"):
             if PARENT in BASH:
-                subprocess.call([*SHELL,
-                                 f'sed -i "s|export POSH_THEME=.*|export POSH_THEME={THEME_PATH}/{theme}.omp.json|" ~/.bashrc'])
+                subprocess.call(
+                    [
+                        *SHELL,
+                        f'sed -i --follow-symlinks "s|export POSH_THEME=.*|export POSH_THEME={replace_home(THEME_PATH)}/{theme}.omp.json|" ~/.bashrc',
+                    ]
+                )
             else:
-                subprocess.call([*SHELL,
-                                 f"""(Get-Content $PROFILE).replace('$env:POSH_THEME = "{POSH_THEME.replace(str(Path.home()), '$env:USERPROFILE')}"',
-                                    '$env:POSH_THEME = "{THEME_PATH.replace(str(Path.home()), '$env:USERPROFILE')}\\{theme}.omp.json"') | Set-Content $PROFILE"""])
+                subprocess.call(
+                    [
+                        *SHELL,
+                        f"""(Get-Content $PROFILE).replace('$env:POSH_THEME = "{replace_home(POSH_THEME)}"',
+                        '$env:POSH_THEME = "{replace_home(THEME_PATH)}\\{theme}.omp.json"') | Set-Content $PROFILE""",
+                    ]
+                )
         else:
             print(f"Invalid theme '{theme}'")
             print("Try 'omputils theme --help for more information")
             sys.exit(1)
 
     if args.default:
-        with open(__file__, 'r') as reader:
+        with open(__file__, "r") as reader:
             lines = reader.readlines()
 
         for i, line in enumerate(lines):
@@ -125,11 +183,15 @@ def handle_theme(args: argparse.Namespace) -> None:
         if PARENT in BASH:
             subprocess.call([*SHELL, f"wget {args.get} -O {THEME_PATH}/{file}"])
         else:
-            subprocess.call([*SHELL, f"Invoke-WebRequest {args.get} -O {THEME_PATH}\\{file}"])
+            subprocess.call(
+                [*SHELL, f"Invoke-WebRequest {args.get} -O {THEME_PATH}\\{file}"]
+            )
         set_theme(extract_name(args.get))
 
     elif args.random:
-        theme = random.choice([file for file in os.listdir(THEME_PATH) if file.endswith(".omp.json")])
+        theme = random.choice(
+            [file for file in os.listdir(THEME_PATH) if file.endswith(".omp.json")]
+        )
         set_theme(theme)
 
         # theme = random.choice(glob.glob(f"{THEME_PATH}/*.omp.json"))
@@ -138,7 +200,7 @@ def handle_theme(args: argparse.Namespace) -> None:
     elif args.list is not None:
         for theme in glob.glob(f"{THEME_PATH}/*{args.list}*.omp.json"):
             print()
-            subprocess.call([*SHELL, f"oh-my-posh --config {theme} --shell universal"])
+            subprocess.call([*SHELL, f"oh-my-posh print primary --config {theme}"])
             print(f"\u001b]8;;{theme}\u001b\\{extract_name(theme)}\u001b]8;;\u001b\\\n")
 
     elif args.current:
@@ -151,7 +213,9 @@ def handle_theme(args: argparse.Namespace) -> None:
         details = {}
         for block in data["blocks"]:
             segments = [segment["type"] for segment in block["segments"]]
-            details.setdefault(f'{block["alignment"]} - {block["type"]}', []).extend(segments)
+            details.setdefault(f'{block["alignment"]} - {block["type"]}', []).extend(
+                segments
+            )
 
         for k, v in details.items():
             print(f"\n{k} \n{', '.join(v)}")
@@ -164,16 +228,17 @@ def handle_path(args: argparse.Namespace) -> None:
     for block in data["blocks"]:
         for segment in block["segments"]:
             if segment["type"] == "path":
-                target = segment["properties"]
+                target = segment
+                break
 
     if args.link:
         target["template"] = " {{ path .Path .Location }} "
     if args.no_link:
         target["template"] = " {{ .Path }} "
     if args.style:
-        target["style"] = args.style
+        target["properties"]["style"] = args.style
     if args.depth:
-        target["max_depth"] = args.depth
+        target["properties"]["max_depth"] = args.depth
 
     with open(POSH_THEME, "w", encoding="utf-8") as writer:
         json.dump(data, writer, indent=2)
@@ -184,19 +249,21 @@ def handle_update(args: argparse.Namespace) -> None:
         if args.mode == "homebrew":
             command = "brew update && brew upgrade oh-my-posh"
         else:
-            command = ' && '.join([
-                'OMP_OV="v$(oh-my-posh --version)"',
-                'sudo wget -q --show-progress https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh',
-                'sudo chmod +x /usr/local/bin/oh-my-posh',
-                f'mkdir -p {THEME_PATH}',
-                f'wget -q --show-progress https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O {THEME_PATH}/themes.zip',
-                f'unzip -oqq {THEME_PATH}/themes.zip -d {THEME_PATH}',
-                f'chmod u+rw {THEME_PATH}/*.json',
-                f'rm {THEME_PATH}/themes.zip',
-                'OMP_NV="v$(oh-my-posh --version)"',
-                'if [ "$OMP_OV" == "$OMP_NV" ]; then printf "Stayed on "; else printf "Updated to "; fi',
-                r'echo -e "\e]8;;https://github.com/JanDeDobbeleer/oh-my-posh/releases/tag/${OMP_NV}\a${OMP_NV}\e]8;;\a"'
-            ])
+            command = " && ".join(
+                [
+                    'OMP_OV="v$(oh-my-posh --version)"',
+                    "sudo wget -q --show-progress https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh",
+                    "sudo chmod +x /usr/local/bin/oh-my-posh",
+                    f"mkdir -p {THEME_PATH}",
+                    f"wget -q --show-progress https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O {THEME_PATH}/themes.zip",
+                    f"unzip -oqq {THEME_PATH}/themes.zip -d {THEME_PATH}",
+                    f"chmod u+rw {THEME_PATH}/*.json",
+                    f"rm {THEME_PATH}/themes.zip",
+                    'OMP_NV="v$(oh-my-posh --version)"',
+                    'if [ "$OMP_OV" == "$OMP_NV" ]; then printf "Stayed on "; else printf "Updated to "; fi',
+                    r'echo -e "\e]8;;https://github.com/JanDeDobbeleer/oh-my-posh/releases/tag/${OMP_NV}\a${OMP_NV}\e]8;;\a"',
+                ]
+            )
     else:
         if args.mode == "scoop":
             command = "scoop update oh-my-posh"
@@ -207,9 +274,10 @@ def handle_update(args: argparse.Namespace) -> None:
         else:
             command = "winget upgrade JanDeDobbeleer.OhMyPosh"
 
-    if retcode := subprocess.call([*SHELL, command]):
+    retcode = subprocess.call([*SHELL, command])
+    if retcode:
         print("Failed to update Oh My Posh!")
-        sys.exit(retcode)
+    return retcode
 
 
 def main() -> int:
@@ -220,6 +288,6 @@ def main() -> int:
     elif args.command == "path":
         handle_path(args)
     elif args.command == "update":
-        handle_update(args)
+        return handle_update(args)
 
     return 0
