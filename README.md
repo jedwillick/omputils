@@ -16,7 +16,7 @@ Ensure the following is set in your `.bashrc` or `.profile` or equivalent.
 
 ```bash
 export POSH_THEME=/path/to/poshthemes/your_theme.omp.json
-eval "$(oh-my-posh --init --shell bash --config $POSH_THEME)"
+eval "$(oh-my-posh init bash)"
 
 # Optional but provides instant changing between themes.
 theme() {
@@ -30,7 +30,7 @@ Ensure the following is set in your `$PROFILE`
 
 ```powershell
 $env:POSH_THEME = "\path\to\poshthemes\your_theme.omp.json"
-oh-my-posh --init --shell pwsh --config $env:POSH_THEME | Invoke-Expression
+oh-my-posh init pwsh | Invoke-Expression
 
 # Optional but provides instant changing between themes.
 function Edit-PoshTheme {
